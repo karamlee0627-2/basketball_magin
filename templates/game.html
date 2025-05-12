@@ -1,16 +1,60 @@
 <!DOCTYPE html>
 <html>
-<head><title>{{ date }} - 경기 {{ game_number }}</title></head>
+<head>
+  <title>{{ date }} - 경기 {{ game_number }}</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 6px 12px;
+      text-align: center;
+    }
+    .score {
+      font-weight: bold;
+    }
+    .margin-positive {
+      color: blue;
+    }
+    .margin-negative {
+      color: red;
+    }
+    a {
+      text-decoration: none;
+    }
+  </style>
+</head>
 <body>
+  <h1>📅 경기 상세 보기</h1>
+  <nav>
+    <a href="/">날짜별 경기</a> |
+    <a href="/player">개인기록</a> |
+    <a href="/ranking">랭킹</a> |
+    <a href="/input">입력</a>
+  </nav>
+  <hr>
+
   <h2>{{ date }} - 경기 {{ game_number }}</h2>
 
   {% for qtr, q in game_data.items() %}
     <h3>쿼터 {{ qtr }}</h3>
-    <p>
+    <p class="score">
       스코어: A {{ q.score_a }} - B {{ q.score_b }}<br>
-      A팀 마진: {{ q.margin | int | plus }}, B팀 마진: {{ -q.margin | int | plus }}
+      A팀 마진: <span class="{{ 'margin-positive' if q.margin >= 0 else 'margin-negative' }}">{{ q.margin }}</span>,
+      B팀 마진: <span class="{{ 'margin-positive' if -q.margin >= 0 else 'margin-negative' }}">{{ -q.margin }}</span>
     </p>
-    <table border="1">
+    <table>
       <tr><th>A팀</th><th>B팀</th></tr>
       {% for i in range(5) %}
         <tr>
@@ -21,6 +65,6 @@
     </table>
   {% endfor %}
 
-  <p><a href="/">← 다시 선택</a></p>
+  <p><a href="/">← 날짜별 경기 목록으로 돌아가기</a></p>
 </body>
 </html>
