@@ -124,7 +124,7 @@ def show_game():
 def ranking_page():
     min_games = request.args.get("min_games", type=int)
     if min_games is None or min_games < 1:
-        min_games = 5
+        min_games = 10
     df = pd.read_sql("SELECT * FROM quarter_entries", engine)
 
     quarter_team_players = defaultdict(lambda: defaultdict(list))
