@@ -6,6 +6,7 @@ from itertools import combinations
 from collections import defaultdict
 import tempfile
 from dotenv import load_dotenv
+from sqlalchemy import text
 load_dotenv()
 app = Flask(__name__)
 
@@ -66,7 +67,14 @@ def player_page():
                         date, game, qtr = qid.split('|')
                         simple_date = pd.to_datetime(date).strftime('%m-%d')
                         label = f"{simple_date} G{game}Q{qtr}"
-                        history[name].append((label, quarter_to_margins[qid][name]))
+                        margin = quarter_to_margins[qid][name]
+                        history[name].append((date, label, margin))  # 날짜 포함
+
+                # 날짜 기준 정렬
+                history[name].sort(key=lambda x: pd.to_datetime(x[0]))
+
+                # 다시 (label, margin) 형태로 압축
+                history[name] = [(label, margin) for _, label, margin in history[name]]
 
             total_margin = sum(
                 sum(quarter_to_margins[qid][p] for p in selected_players) // len(selected_players)
@@ -92,32 +100,83 @@ def player_page():
         history=history,
         player_stats=player_stats
     )
+@app.route('/delete', methods=['GET', 'POST'])
+def delete_data():
+    message = ''
 
+    # 날짜 목록 불러오기
+    df_dates = pd.read_sql("SELECT DISTINCT date FROM quarter_entries ORDER BY date DESC", engine)
+    df_dates['date'] = pd.to_datetime(df_dates['date'], errors='coerce')
+    dates = df_dates['date'].dt.strftime('%Y-%m-%d').dropna().tolist()
+
+    if request.method == 'POST':
+        selected_date = request.form.get('date')
+        password = request.form.get('password')
+
+        if password != '9091':
+            message = "비밀번호가 틀렸습니다."
+        elif not selected_date:
+            message = "삭제할 날짜를 선택하세요."
+        else:
+            with engine.begin() as conn:
+                # 날짜의 일부분만 비교하기 위해 date::date 사용
+                conn.execute(
+                    text("DELETE FROM quarter_entries WHERE date::date = :date"),
+                    {'date': selected_date}
+                )
+                # 필요한 경우 여기서 다른 테이블도 같이 삭제 가능
+
+            message = f"{selected_date}의 데이터가 성공적으로 삭제되었습니다."
+
+            # 날짜 목록 다시 불러오기
+            df_dates = pd.read_sql("SELECT DISTINCT date FROM quarter_entries ORDER BY date DESC", engine)
+            df_dates['date'] = pd.to_datetime(df_dates['date'], errors='coerce')
+            dates = df_dates['date'].dt.strftime('%Y-%m-%d').dropna().tolist()
+
+    return render_template('delete.html', dates=dates, message=message)
 @app.route("/game")
 def show_game():
     key = request.args.get("key")
     if not key or '|' not in key:
         return "잘못된 요청입니다"
     date, game_number = key.split('|')
-    query = f"""
+    
+    query = text("""
         SELECT quarter, team, player_name, player_order, team_a_score, team_b_score, score_margin
         FROM quarter_entries
-        WHERE date = %s AND game_number = %s
+        WHERE date = :date AND game_number = :game_number
         ORDER BY quarter, team, player_order
-    """
-    df = pd.read_sql(query, engine, params=(date, game_number))
+    """)
+    df = pd.read_sql(query, engine, params={"date": date, "game_number": game_number})
+
     data = {}
+    cumulative_a = 0
+    cumulative_b = 0
+    used_quarters = set()
+
     for _, row in df.iterrows():
         qtr = row["quarter"]
         team = row["team"]
-        if qtr not in data:
+
+        if qtr not in used_quarters:
+            score_a = row["team_a_score"]
+            score_b = row["team_b_score"]
+
+            cumulative_a += score_a
+            cumulative_b += score_b
+
             data[qtr] = {
                 "A": [], "B": [],
-                "score_a": row["team_a_score"],
-                "score_b": row["team_b_score"],
-                "margin": row["score_margin"]
+                "score_a": score_a,
+                "score_b": score_b,
+                "margin": row["score_margin"],
+                "cumulative_a": cumulative_a,
+                "cumulative_b": cumulative_b
             }
+            used_quarters.add(qtr)
+
         data[qtr][team].append(row["player_name"])
+
     return render_template("game.html", date=date, game_number=game_number, game_data=data)
 
 @app.route("/ranking")

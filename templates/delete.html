@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>데이터 삭제</title>
+</head>
+<body>
+  <h2>날짜별 데이터 삭제</h2>
+  
+  {% if message %}
+    <p style="color: red;">{{ message }}</p>
+  {% endif %}
+
+  <form method="POST">
+    <label for="date">삭제할 날짜:</label>
+    <select name="date" id="date">
+      <option value="">-- 날짜 선택 --</option>
+      {% for d in dates %}
+        <option value="{{ d }}">{{ d }}</option>
+      {% endfor %}
+    </select>
+    <br><br>
+
+    <label for="password">비밀번호:</label>
+    <input type="password" name="password" id="password">
+    <br><br>
+
+    <input type="submit" value="삭제">
+  </form>
+</body>
+</html>

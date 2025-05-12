@@ -50,9 +50,12 @@
   {% for qtr, q in game_data.items() %}
     <h3>쿼터 {{ qtr }}</h3>
     <p class="score">
-      스코어: A {{ q.score_a }} - B {{ q.score_b }}<br>
-      A팀 마진: <span class="{{ 'margin-positive' if q.margin >= 0 else 'margin-negative' }}">{{ q.margin }}</span>,
-      B팀 마진: <span class="{{ 'margin-positive' if -q.margin >= 0 else 'margin-negative' }}">{{ -q.margin }}</span>
+      스코어: A {{ q.score_a }} (누적: {{ q.cumulative_a }}) -
+              B {{ q.score_b }} (누적: {{ q.cumulative_b }})<br>
+      A팀 마진:
+        <span class="{{ 'margin-positive' if q.margin >= 0 else 'margin-negative' }}">{{ q.margin }}</span>,
+      B팀 마진:
+        <span class="{{ 'margin-positive' if -q.margin >= 0 else 'margin-negative' }}">{{ -q.margin }}</span>
     </p>
     <table>
       <tr><th>A팀</th><th>B팀</th></tr>
