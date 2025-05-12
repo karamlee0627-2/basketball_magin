@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>경기 선택</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    nav {
+      margin-bottom: 20px;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li a {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏀 농구 데이터 시스템</h1>
+
+  <nav>
+    <a href="/">날짜별 경기</a> |
+    <a href="/player">개인기록</a> |
+    <a href="/ranking">랭킹</a> |
+    <a href="/input">입력</a> |
+  </nav>
+
+  <hr>
+
+  {% for date, games in games_by_date.items() %}
+    <h3>{{ date }}</h3>
+    <ul>
+      {% for game in games %}
+        <li><a href="/game?key={{ date }}|{{ game }}">경기 {{ game }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+
+</body>
+</html>

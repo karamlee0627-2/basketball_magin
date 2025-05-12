@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>개인기록</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .player-item {
+      width: 150px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>👤 개인기록 보기</h1>
+  <nav>
+    <a href="/">날짜별 경기</a> |
+    <a href="/player">개인기록</a> |
+    <a href="/ranking">랭킹</a> |
+    <a href="/input">입력</a>
+  </nav>
+  <hr>
+
+  <form method="get" action="/player">
+    <div class="player-list">
+      {% for player in players %}
+        <label class="player-item">
+          <input type="checkbox" name="selected" value="{{ player }}" onchange="checkLimit()"
+          {% if player in selected_players %}checked{% endif %}>
+          {{ player }}
+        </label>
+      {% endfor %}
+    </div>
+    <p>
+      <input type="submit" value="마진 보기" id="submit-btn">
+    </p>
+  </form>
+
+  {% if selected_players %}
+    <h2>선택된 선수: {{ selected_players | join(', ') }}</h2>
+    <h3>누적 마진: <span style="color: {{ 'blue' if total_margin >= 0 else 'red' }}">{{ total_margin }}</span></h3>
+  {% endif %}
+    {% if player_stats %}
+    <h2>출전 요약</h2>
+    <table border="1" cellpadding="6">
+        <tr>
+        <th>선수</th>
+        <th>출전 쿼터수</th>
+        <th>승리 수</th>
+        <th>승률 (%)</th>
+        </tr>
+        {% for name in selected_players %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ player_stats[name].count }}</td>
+            <td>{{ player_stats[name].win }}</td>
+            <td>{{ player_stats[name].win_rate }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+  {% if history %}
+    <h2>쿼터별 마진 히스토리</h2>
+    <canvas id="marginChart" width="1000" height="400"></canvas>
+    <script>
+  const ctx = document.getElementById('marginChart').getContext('2d');
+
+  const chartLabels = [
+    {% for label, _ in history.values()|first %}
+      "{{ label }}",
+    {% endfor %}
+  ];
+
+  const datasets = [
+    {% for player, records in history.items() %}
+    {
+      label: "{{ player }}",
+      data: [
+        {% for _, margin in records %}
+          {{ margin }},
+        {% endfor %}
+      ],
+      backgroundColor: [
+        {% for _, margin in records %}
+          "{{ 'blue' if margin >= 0 else 'red' }}",
+        {% endfor %}
+      ]
+    },
+    {% endfor %}
+  ];
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          title: { display: true, text: '마진' },
+          beginAtZero: true,
+          grid: {
+            color: function(ctx) {
+              return ctx.tick.value === 0 ? 'red' : '#ccc';
+            }
+          }
+        },
+        x: {
+          title: { display: true, text: '경기 (예: 25-05-11 G1Q2)' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+  {% endif %}
+
+  <script>
+    function checkLimit() {
+      const checkboxes = document.querySelectorAll('input[type=checkbox][name=selected]');
+      const checked = Array.from(checkboxes).filter(cb => cb.checked);
+      if (checked.length >= 5) {
+        checkboxes.forEach(cb => {
+          if (!cb.checked) cb.disabled = true;
+        });
+      } else {
+        checkboxes.forEach(cb => cb.disabled = false);
+      }
+    }
+    window.onload = checkLimit;
+  </script>
+</body>
+</html>

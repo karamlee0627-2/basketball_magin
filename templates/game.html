@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{ date }} - 경기 {{ game_number }}</title></head>
+<body>
+  <h2>{{ date }} - 경기 {{ game_number }}</h2>
+
+  {% for qtr, q in game_data.items() %}
+    <h3>쿼터 {{ qtr }}</h3>
+    <p>
+      스코어: A {{ q.score_a }} - B {{ q.score_b }}<br>
+      A팀 마진: {{ q.margin | int | plus }}, B팀 마진: {{ -q.margin | int | plus }}
+    </p>
+    <table border="1">
+      <tr><th>A팀</th><th>B팀</th></tr>
+      {% for i in range(5) %}
+        <tr>
+          <td>{{ q.A[i] if i < q.A|length else "" }}</td>
+          <td>{{ q.B[i] if i < q.B|length else "" }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endfor %}
+
+  <p><a href="/">← 다시 선택</a></p>
+</body>
+</html>

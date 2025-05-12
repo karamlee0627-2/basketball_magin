@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>랭킹</title>
+  <style>
+    body { font-family: sans-serif; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    .top-margin { background-color: #d0f0ff; }
+    .top-winrate { background-color: #e0ffe0; }
+    .worst-margin { background-color: #ffe0e0; }
+    .worst-winrate { background-color: #fff4cc; }
+    .slider-label { font-size: 1.2em; font-weight: bold; margin-right: 10px; }
+    .slider-wrapper { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .slider-wrapper input[type=range] { width: 400px; height: 40px; }
+    .slider-wrapper input[type=number] { width: 60px; height: 30px; font-size: 1em; }
+  </style>
+  <script>
+    function updateSlider(val) {
+      document.getElementById("sliderVal").innerText = val;
+      document.getElementById("sliderInput").value = val;
+      document.getElementById("sliderNumber").value = val;
+      const url = new URL(window.location.href);
+      url.searchParams.set("min_games", val);
+      window.location.href = url.toString();
+    }
+    function updateFromBox(val) {
+      document.getElementById("sliderInput").value = val;
+      updateSlider(val);
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+      const val = parseInt("{{ min_games|default(5) }}");
+      const slider = document.getElementById("sliderInput");
+      const number = document.getElementById("sliderNumber");
+      const display = document.getElementById("sliderVal");
+      if (slider && number && display) {
+        slider.value = val;
+        number.value = val;
+        display.innerText = val;
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>📊 조합 랭킹</h1>
+  <nav>
+    <a href="/">날짜별 경기</a> |
+    <a href="/player">개인기록</a> |
+    <a href="/ranking">랭킹</a> |
+    <a href="/input">입력</a>
+  </nav>
+  <hr>
+
+  <form id="sliderForm" method="get" action="/ranking">
+    <div class="slider-wrapper">
+      <label class="slider-label">최소 경기수:</label>
+      <input type="range" id="sliderInput" name="min_games" min="1" max="100" oninput="updateSlider(this.value)">
+      <input type="number" id="sliderNumber" min="1" max="100" onchange="updateFromBox(this.value)">
+      <span id="sliderVal"></span>
+    </div>
+  </form>
+
+  {% for size in range(1, 6) %}
+    <h2>{{ size }}인 조합</h2>
+    <table>
+      <tr>
+        <th>순위</th>
+        <th>조합</th>
+        <th>경기수</th>
+        <th>마진</th>
+        <th>승률</th>
+        <th>구분</th>
+      </tr>
+      {% set rows = ranking | selectattr("size", "equalto", size) | list %}
+      {% if rows|length == 0 %}
+        <tr><td colspan="6">데이터 없음</td></tr>
+      {% else %}
+        {% set sorted_rows = rows | sort(attribute='type') %}
+        {% set previous_type = "" %}
+        {% set rank = namespace(value=1) %}
+        {% for row in sorted_rows %}
+          <tr class="{% if row.type == 'TOP_MARGIN' %}top-margin{% elif row.type == 'TOP_WINRATE' %}top-winrate{% elif row.type == 'WORST_MARGIN' %}worst-margin{% elif row.type == 'WORST_WINRATE' %}worst-winrate{% endif %}">
+            <td>{{ rank.value }}</td>
+            <td>{{ row.players }}</td>
+            <td>{{ row.games }}</td>
+            <td>{{ row.get('margin', 0)|round(1) }}</td>
+            <td>{{ row.get('winrate', 0) }}%</td>
+            <td>
+              {% if row.type == 'TOP_MARGIN' %}마진 TOP
+              {% elif row.type == 'TOP_WINRATE' %}승률 TOP
+              {% elif row.type == 'WORST_MARGIN' %}마진 WORST
+              {% elif row.type == 'WORST_WINRATE' %}승률 WORST
+              {% endif %}
+            </td>
+          </tr>
+          {% set previous_type = row.type %}
+          {% set rank.value = rank.value + 1 %}
+        {% endfor %}
+      {% endif %}
+    </table>
+  {% endfor %}
+</body>
+</html>
