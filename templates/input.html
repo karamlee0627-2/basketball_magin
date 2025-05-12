@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>데이터 입력</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .right-align {
+      float: right;
+    }
+    form {
+      margin-top: 30px;
+    }
+    input, textarea {
+      margin: 5px 0;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📥 데이터 입력</h1>
+  <nav>
+    <a href="/">날짜별 경기</a> |
+    <a href="/player">개인기록</a> |
+    <a href="/ranking">랭킹</a> |
+    <a href="/input" class="right-align">데이터 입력</a>
+  </nav>
+  <hr>
+
+  {% if not authenticated %}
+    <form method="post">
+      <label>비밀번호 입력:</label><br>
+      <input type="password" name="password">
+      <input type="submit" value="입장">
+    </form>
+  {% else %}
+    <h2>엑셀 파일 업로드</h2>
+    <form method="post" enctype="multipart/form-data" action="/input/upload">
+      <input type="file" name="excel_file" accept=".xlsx">
+      <input type="submit" value="업로드">
+    </form>
+
+    <h2>또는 수동 입력</h2>
+    <form method="post" action="/input/manual">
+      <label>날짜 (YYYY-MM-DD):</label><br>
+      <input type="text" name="date"><br>
+
+      <label>경기 번호:</label><br>
+      <input type="number" name="game"><br>
+
+      <label>쿼터:</label><br>
+      <input type="number" name="quarter"><br>
+
+      <label>A팀 선수 (한 줄에 한 명씩):</label><br>
+      <textarea name="team_a" rows="5" cols="20"></textarea><br>
+
+      <label>B팀 선수 (한 줄에 한 명씩):</label><br>
+      <textarea name="team_b" rows="5" cols="20"></textarea><br>
+
+      <label>A팀 점수:</label>
+      <input type="number" name="score_a">
+      <label>B팀 점수:</label>
+      <input type="number" name="score_b"><br>
+
+      <input type="submit" value="등록">
+    </form>
+  {% endif %}
+</body>
+</html>
